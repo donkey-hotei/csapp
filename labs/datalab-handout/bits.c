@@ -158,7 +158,7 @@ int getByte(int x, int n) {
      * Shift by n-bytes and mask out all but
      * the lowest significant byte.
      */
-    return (x >> 8 * n) & 0xff;
+    return (x >> (n << 3)) & 0xff;
 }
 /* 
  * logicalShift - shift x to the right by n, using a logical shift
