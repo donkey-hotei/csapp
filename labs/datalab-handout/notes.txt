@@ -25,7 +25,7 @@ n |  (1 << n)
 
   and so on...
 
-Also, left shifting by one is equivalent to multiplying by two.
+Also, left shifting by one is equivalent to multiplying by two to the power of 1.
 
 Multiplication without the `*` operator?
 
