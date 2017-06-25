@@ -213,7 +213,18 @@ int bitCount(int x) {
  *   Rating: 4
  */
 int bang(int x) {
-    return ((x | (~x + 1)) >> 31) & 0;
+    /*
+     * Propgate any 1's to the left by shifting
+     * in successive halves of a word and OR'ing
+     * against itself (unshifted). Finally inverting
+     * those bits and AND'ing against 1.
+     */
+    x = (x >> 16) | x;
+    x = (x >> 8)  | x;
+    x = (x >> 4)  | x;
+    x = (x >> 2)  | x;
+    x = (x >> 1)  | x;
+    return ~x & 1;
 }
 /*
  * tmin - return minimum two's complement integer 
