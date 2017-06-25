@@ -1,0 +1,53 @@
+Datalab Notes
+--------------
+
+Don't forget De Morgan's laws !
+
+
+A logical shift is like an arithmetic shift except that bits
+"rotated in" are filled with zeros. This means that shifting
+a negative integer to the right, even once, would cause it to
+become positive.
+
+The `>>` operator in C acts as a logical shift if the integer
+type is unsigned or as an arithmetic shift if the integer is
+signed (to preserve signededness).
+
+Remember the (1 << n) trick:
+
+n |  (1 << n)
+--------------
+0 |  11111110
+1 |  11111101
+2 |  11111011
+3 |  11110100
+     ...
+
+  and so on...
+
+Also, left shifting by one is equivalent to multiplying by two.
+
+Multiplication without the `*` operator?
+
+Let x = 42 and y = 3
+x * y => 0b101010 * 0b11                  // 1. Rewritten in binary.
+      => 0b101010 * (1 * 2^1 + 1 * 2^0)   // 2. Positional notation.
+      => 0b101010 * 2^1 + 0b101010 * 2^0  // 3. Distribute 42
+      and since shifting to the left by n is like multiplying by 2^n...
+      => 0b101010 << 1 + 0b101010 << 0
+
+Therefore 8 * n or n * 8 can be rewritten as:
+n * 8 => n * 0b1000
+      => n * (1 * 2^3)
+      => n * 2^3
+      => n << 3
+
+
+Masking every 2-bits, 4-bits, 8-bits, 16-bits?
+
+0x55555555 = '0b1010101010101010101010101010101'
+0x33333333 = '0b0110011001100110011001100110011'
+0x0f0f0f0f = '0b0001111000011110000111100001111'
+0x00ff00ff = '0b0000000111111110000000011111111'
+0x0000ffff = '0b0000000000000001111111111111111'
+

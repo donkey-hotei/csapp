@@ -189,7 +189,17 @@ int logicalShift(int x, int n) {
  *   Rating: 4
  */
 int bitCount(int x) {
-  return 2;
+    /*
+     * First count on-bits in every 2 bits,
+     * then in every 4 bits, .., up to 16-bits
+     * finally merging them all to the far right.
+     */
+    x = (x & 0x55555555) + ((x >> 1) & 0x55555555);
+    x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+    x = (x & 0x0f0f0f0f) + ((x >> 4) & 0x0f0f0f0f);
+    x = (x & 0x00ff00ff) + ((x >> 8) & 0x00ff00ff);
+    x = (x & 0x0000ffff) + ((x >> 16) & 0x0000ffff);
+    return x;
 }
 /* 
  * bang - Compute !x without using !
