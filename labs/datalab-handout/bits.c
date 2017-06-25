@@ -139,7 +139,11 @@ NOTES:
  *   Rating: 1
  */
 int bitAnd(int x, int y) {
-  return ~(~x|~y);
+    /*
+     * By De Morgan's laws, we have:
+     * P OR Q = NOT ((NOT P) OR (NOT Q))
+     */
+    return ~(~x|~y);
 }
 /* 
  * getByte - Extract byte n from word x
@@ -150,7 +154,10 @@ int bitAnd(int x, int y) {
  *   Rating: 2
  */
 int getByte(int x, int n) {
-//    return (x >> n) & ~(((0x1 << 0x32) >> n) << 1);
+    /*
+     * Shift by n-bytes and mask out all but
+     * the lowest significant byte.
+     */
     return (x >> 8 * n) & 0xff;
 }
 /* 
@@ -162,7 +169,17 @@ int getByte(int x, int n) {
  *   Rating: 3
  */
 int logicalShift(int x, int n) {
-    return (x >> n);
+    /*
+     * First assign s to be the mask used to
+     * mark the n 1's shifted in (e.g: for n = 2,
+     * we have 11011111) before XOR'ing it with
+     * the result of the arithmetic shift to toggle
+     * those leading bits to 0.
+     * Finally, AND this result with the original
+     * shift to find all those bits in common.
+     */
+    int s = ((1 << 31) >> n) << 1;
+    return ((x >> n) ^ s) & (x >> n);
 }
 /*
  * bitCount - returns count of number of 1's in word
