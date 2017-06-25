@@ -51,3 +51,8 @@ Masking every 2-bits, 4-bits, 8-bits, 16-bits?
 0x00ff00ff = '0b0000000111111110000000011111111'
 0x0000ffff = '0b0000000000000001111111111111111'
 
+
+What about division using only `+` and bitwise operators?
+One should still be able to write the inverse value of the
+denominator in base 2.
+
