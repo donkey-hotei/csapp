@@ -141,7 +141,7 @@ NOTES:
 int bitAnd(int x, int y) {
     /*
      * By De Morgan's laws, we have:
-     * P OR Q = NOT ((NOT P) OR (NOT Q))
+     * P AND Q = NOT ((NOT P) OR (NOT Q))
      */
     return ~(~x|~y);
 }
