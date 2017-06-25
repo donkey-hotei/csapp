@@ -1,8 +1,8 @@
-/* 
- * CS:APP Data Lab 
- * 
+/*
+ * CS:APP Data Lab
+ *
  * <Please put your name and userid here>
- * 
+ *
  * bits.c - Source file with your solutions to the Lab.
  *          This is the file you will hand in to your instructor.
  *
@@ -10,7 +10,7 @@
  * compiler. You can still use printf for debugging without including
  * <stdio.h>, although you might get a compiler warning. In general,
  * it's not good practice to ignore compiler warnings, but in this
- * case it's OK.  
+ * case it's OK.
  */
 
 #if 0
@@ -26,7 +26,7 @@ editing the collection of functions in this source file.
 INTEGER CODING RULES:
 
   Replace the "return" statement in each function with one
-  or more lines of C code that implements the function. Your code 
+  or more lines of C code that implements the function. Your code
   must conform to the following style:
 
   int Funct(arg1, arg2, ...) {
@@ -103,7 +103,6 @@ You are expressly forbidden to:
   5. Use any data type other than int or unsigned.  This means that you
      cannot use arrays, structs, or unions.
   6. Use any floating point data types, operations, or constants.
-  return 2;
 
 NOTES:
   1. Use the dlc (data lab checker) compiler (described in the handout) to 
@@ -121,7 +120,7 @@ NOTES:
 
 /*
  * STEP 2: Modify the following functions according the coding rules.
- * 
+ *
  *   IMPORTANT. TO AVOID GRADING SURPRISES:
  *   1. Use the dlc compiler to check that your solutions conform
  *      to the coding rules.
@@ -131,8 +130,8 @@ NOTES:
 
 
 #endif
-/* 
- * bitAnd - x&y using only ~ and | 
+/*
+ * bitAnd - x&y using only ~ and |
  *   Example: bitAnd(6, 5) = 4
  *   Legal ops: ~ |
  *   Max ops: 8
@@ -145,7 +144,7 @@ int bitAnd(int x, int y) {
      */
     return ~(~x|~y);
 }
-/* 
+/*
  * getByte - Extract byte n from word x
  *   Bytes numbered from 0 (LSB) to 3 (MSB)
  *   Examples: getByte(0x12345678,1) = 0x56
@@ -160,7 +159,7 @@ int getByte(int x, int n) {
      */
     return (x >> (n << 3)) & 0xff;
 }
-/* 
+/*
  * logicalShift - shift x to the right by n, using a logical shift
  *   Can assume that 0 <= n <= 31
  *   Examples: logicalShift(0x87654321,4) = 0x08765432
@@ -194,24 +193,29 @@ int bitCount(int x) {
      * then in every 4 bits, .., up to 16-bits
      * finally merging them all to the far right.
      */
-    x = (x & 0x55555555) + ((x >> 1) & 0x55555555);
-    x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
-    x = (x & 0x0f0f0f0f) + ((x >> 4) & 0x0f0f0f0f);
-    x = (x & 0x00ff00ff) + ((x >> 8) & 0x00ff00ff);
-    x = (x & 0x0000ffff) + ((x >> 16) & 0x0000ffff);
+    int a = ((0x55 << 24) | (0x55 << 16) | (0x55 << 8) | 0x55);
+    int b = ((0x33 << 24) | (0x33 << 16) | (0x33 << 8) | 0x33);
+    int c = ((0x0f << 24) | (0x0f << 16) | (0x0f << 8) | 0x0f);
+    int d = ((0x00 << 24) | (0xff << 16) | (0x00 << 8) | 0xff);
+    int e = ((0x00 << 24) | (0x00 << 16) | (0xff << 8) | 0xff);
+    x = (x & a) + ((x >> 1)  & a);
+    x = (x & b) + ((x >> 2)  & b);
+    x = (x & c) + ((x >> 4)  & c);
+    x = (x & d) + ((x >> 8)  & d);
+    x = (x & e) + ((x >> 16) & e);
     return x;
 }
-/* 
+/*
  * bang - Compute !x without using !
  *   Examples: bang(3) = 0, bang(0) = 1
  *   Legal ops: ~ & ^ | + << >>
  *   Max ops: 12
- *   Rating: 4 
+ *   Rating: 4
  */
 int bang(int x) {
     return ((x | (~x + 1)) >> 31) & 0;
 }
-/* 
+/*
  * tmin - return minimum two's complement integer 
  *   Legal ops: ! ~ & ^ | + << >>
  *   Max ops: 4
@@ -220,7 +224,7 @@ int bang(int x) {
 int tmin(void) {
   return 1 << 31;
 }
-/* 
+/*
  * fitsBits - return 1 if x can be represented as an 
  *  n-bit, two's complement integer.
  *   1 <= n <= 32
@@ -232,7 +236,7 @@ int tmin(void) {
 int fitsBits(int x, int n) {
   return 2;
 }
-/* 
+/*
  * divpwr2 - Compute x/(2^n), for 0 <= n <= 30
  *  Round toward zero
  *   Examples: divpwr2(15,1) = 7, divpwr2(-33,4) = -2
@@ -241,10 +245,10 @@ int fitsBits(int x, int n) {
  *   Rating: 2
  */
 int divpwr2(int x, int n) {
-    return ~((x >> n) - 1);
+    return ~(x >> n);
 }
-/* 
- * negate - return -x 
+/*
+ * negate - return -x
  *   Example: negate(1) = -1.
  *   Legal ops: ! ~ & ^ | + << >>
  *   Max ops: 5
@@ -253,7 +257,7 @@ int divpwr2(int x, int n) {
 int negate(int x) {
   return 2;
 }
-/* 
+/*
  * isPositive - return 1 if x > 0, return 0 otherwise 
  *   Example: isPositive(-1) = 0.
  *   Legal ops: ! ~ & ^ | + << >>
@@ -263,7 +267,7 @@ int negate(int x) {
 int isPositive(int x) {
   return 2;
 }
-/* 
+/*
  * isLessOrEqual - if x <= y  then return 1, else return 0 
  *   Example: isLessOrEqual(4,5) = 1.
  *   Legal ops: ! ~ & ^ | + << >>
@@ -283,7 +287,7 @@ int isLessOrEqual(int x, int y) {
 int ilog2(int x) {
   return 2;
 }
-/* 
+/*
  * float_neg - Return bit-level equivalent of expression -f for
  *   floating point argument f.
  *   Both the argument and result are passed as unsigned int's, but
@@ -297,7 +301,7 @@ int ilog2(int x) {
 unsigned float_neg(unsigned uf) {
  return 2;
 }
-/* 
+/*
  * float_i2f - Return bit-level equivalent of expression (float) x
  *   Result is returned as unsigned int, but
  *   it is to be interpreted as the bit-level representation of a
@@ -309,7 +313,7 @@ unsigned float_neg(unsigned uf) {
 unsigned float_i2f(int x) {
   return 2;
 }
-/* 
+/*
  * float_twice - Return bit-level equivalent of expression 2*f for
  *   floating point argument f.
  *   Both the argument and result are passed as unsigned int's, but
