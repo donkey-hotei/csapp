@@ -256,7 +256,7 @@ int fitsBits(int x, int n) {
  *   Rating: 2
  */
 int divpwr2(int x, int n) {
-    return ~(x >> n);
+    return (x >> n);
 }
 /*
  * negate - return -x
@@ -276,7 +276,15 @@ int negate(int x) {
  *   Rating: 3
  */
 int isPositive(int x) {
-  return 2;
+    /*
+     * Check if the sign-bit is on by masking with
+     * the high bit 0b10000000000000000000000000000000,
+     * shifing that result all the way over to the
+     * lowest bit.
+     */
+
+    int high_bit = 0x8 << 28;
+    return !((x & high_bit) >> 31 | !x);
 }
 /*
  * isLessOrEqual - if x <= y  then return 1, else return 0 
