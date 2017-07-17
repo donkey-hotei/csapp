@@ -266,7 +266,7 @@ int divpwr2(int x, int n) {
  *   Rating: 2
  */
 int negate(int x) {
-  return 2;
+  return ~x + 1;
 }
 /*
  * isPositive - return 1 if x > 0, return 0 otherwise 
@@ -282,7 +282,6 @@ int isPositive(int x) {
      * shifing that result all the way over to the
      * lowest bit.
      */
-
     int high_bit = 0x8 << 28;
     return !((x & high_bit) >> 31 | !x);
 }
@@ -294,7 +293,8 @@ int isPositive(int x) {
  *   Rating: 3
  */
 int isLessOrEqual(int x, int y) {
-  return 2;
+    int s = !(x >> 31) ^ !(y >> 31);
+    return (s & (x >> 31)) | (!s & !((y + (~x + 1)) >> 31));
 }
 /*
  * ilog2 - return floor(log base 2 of x), where x > 0
