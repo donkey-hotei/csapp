@@ -266,7 +266,7 @@ int divpwr2(int x, int n) {
  *   Rating: 2
  */
 int negate(int x) {
-  return ~x + 1;
+    return ~x + 1;
 }
 /*
  * isPositive - return 1 if x > 0, return 0 otherwise 
@@ -294,7 +294,8 @@ int isPositive(int x) {
  */
 int isLessOrEqual(int x, int y) {
     int s = !(x >> 31) ^ !(y >> 31);
-    return (s & (x >> 31)) | (!s & !((y + (~x + 1)) >> 31));
+    return (s & (x >> 31)) | \
+        (!s & !((y + (~x + 1)) >> 31));
 }
 /*
  * ilog2 - return floor(log base 2 of x), where x > 0
@@ -304,7 +305,7 @@ int isLessOrEqual(int x, int y) {
  *   Rating: 4
  */
 int ilog2(int x) {
-  return 2;
+    return 2;
 }
 /*
  * float_neg - Return bit-level equivalent of expression -f for
@@ -318,7 +319,7 @@ int ilog2(int x) {
  *   Rating: 2
  */
 unsigned float_neg(unsigned uf) {
- return 2;
+    return 2;
 }
 /*
  * float_i2f - Return bit-level equivalent of expression (float) x
@@ -330,7 +331,7 @@ unsigned float_neg(unsigned uf) {
  *   Rating: 4
  */
 unsigned float_i2f(int x) {
-  return 2;
+    return 2;
 }
 /*
  * float_twice - Return bit-level equivalent of expression 2*f for
@@ -344,5 +345,5 @@ unsigned float_i2f(int x) {
  *   Rating: 4
  */
 unsigned float_twice(unsigned uf) {
-  return 2;
+    return 2;
 }
