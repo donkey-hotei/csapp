@@ -106,13 +106,26 @@ void phase_3(char ** input){
       -> func
 
  * func(7, 0, 14);
- * 7 is not less than 14
- * -> func(7, 1, 14);
- *   -> 1 + (13 / 2) == 7 is not less than 14
- *     -> 
+ * -> 14 - 0 / 2 == 7 is equal to 7
+ *  returns 0;
+
+ * func(6, 0, 14);
+ * -> 7 is greater than a
+ *    2 * func(6, 0, 6)
+ *    6 - 0 / 2 == 3 is less than 6
+ *    -> 2 * func(6, 1, 6) + 1
+ *      -> (6 - 1) / 5 == 3 + x == 4 is less than 6
+ *       -> 2 * func(6, 2, 6) + 1
+ *       (6 - 2) / 2  + 2 is == 4 is less than 6
+ *
+ *
+ *
 */
 
 int func4(int a, int x, int y) {
+    // mov eax, edx  ; get y
+    // sub eax, esi, ; y - x
+    // 
     int result = (x + (y - x) / 2);
 
     if (result > a)
@@ -131,11 +144,9 @@ int func4(int a, int x, int y) {
  */
 void phase_4(char ** input){
     int a, b;
-    if(sscanf("%d %d", a, b) != 2)
+    if((sscanf("%d %d", a, b) != 2) || (a > 14))
         explode_bomb();
-    if (a > 14)
-        explode_bomb();
-    if ((func4(a, 0, 14) != 0) && b != 0)
+    if ((func4(a, 0, 14) != 0) || b != 0)
         explode_bomb();
 }
 
