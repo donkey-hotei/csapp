@@ -77,7 +77,7 @@ void phase_3(char ** input){
         case 4:
             val = 389;
         case 5:
-            val = 206;
+            al = 206;
         case 6:
             val = 682;
         case 7:
@@ -90,49 +90,17 @@ void phase_3(char ** input){
     return 0;
 }
 
-/* int func4(int n){
-
-    if (n <= 1)
-        return n;
-    return func4(n-1) + func4(n-2);
-}
-*/
-
-
 /*
- * func4(14, 0, 14);
- * -> (14 - 0) / 2 == 7 is less than 14
-      func4(14, 0, 7 - 1);
-      -> func
-
- * func(7, 0, 14);
- * -> 14 - 0 / 2 == 7 is equal to 7
- *  returns 0;
-
- * func(6, 0, 14);
- * -> 7 is greater than a
- *    2 * func(6, 0, 6)
- *    6 - 0 / 2 == 3 is less than 6
- *    -> 2 * func(6, 1, 6) + 1
- *      -> (6 - 1) / 5 == 3 + x == 4 is less than 6
- *       -> 2 * func(6, 2, 6) + 1
- *       (6 - 2) / 2  + 2 is == 4 is less than 6
- *
- *
- *
-*/
-
+ * Binary search that sums the guesses as it goes.
+ */
 int func4(int a, int x, int y) {
-    // mov eax, edx  ; get y
-    // sub eax, esi, ; y - x
-    // 
-    int result = (x + (y - x) / 2);
+    int avg = x + ((y - x) / 2);
 
-    if (result > a)
-        return 2 * func4(a, x, result - 1);
-    else if (result < a)
-        return 2 * func4(a, result + 1, y) + 1;
-    else 
+    if (avg > a)
+        return 2 * func4(a, x, avg - 1);
+    else if (avg < a)
+        return 2 * func4(a, avg + 1, y) + 1;
+    else
         return 0;
 }
 
@@ -140,7 +108,7 @@ int func4(int a, int x, int y) {
 /*
  * Illustrates procedures and call stacks.
  *
- * key: c
+ * key: 7 0
  */
 void phase_4(char ** input){
     int a, b;
