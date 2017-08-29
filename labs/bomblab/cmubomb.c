@@ -28,7 +28,7 @@
 /*
  * A first reversal.
  */
-void phase_1(char ** input){
+void phase_1(char * input){
     if (strings_not_equal(input, "Border relations with Canada have never been better."))
         explode_bomb();
 }
@@ -39,7 +39,7 @@ void phase_1(char ** input){
  *
  * key: 1 2 4 8 16 32
  */
-void phase_2(char ** input){
+void phase_2(char * input){
     int ar[6];
     ar = read_six_numbers(input);
     for (int i = 0; i <= 4; i++)
@@ -54,7 +54,7 @@ void phase_2(char ** input){
  *
  * key: 1 311, or 2 707, ..., 7 or 327
  */
-void phase_3(char ** input){
+void phase_3(char * input){
     int a, b; // local_ch, local_8h
     if (sscanf(input, "%d %d", a, d, b) <= 1)
         explode_bomb();
@@ -104,13 +104,12 @@ int func4(int a, int x, int y) {
         return 0;
 }
 
-
 /*
  * Illustrates procedures and call stacks.
  *
  * key: 7 0
  */
-void phase_4(char ** input){
+void phase_4(char * input){
     int a, b;
     if((sscanf("%d %d", a, b) != 2) || (a > 14))
         explode_bomb();
@@ -118,20 +117,33 @@ void phase_4(char ** input){
         explode_bomb();
 }
 
-void phase_5(char ** input){
-    char ** string = "isrveawhobpnutfg";
+// 0x004024b0
+char * string = "maduiersnfotvbyl";
+/*
+ * Illustrates operations on strings.
+ *
+ * key: ionuvw
+ */
+void phase_5(char * input){
+    char tmp;
+    char * result;
+
     if (string_length(input) != 6)
         explode_bomb();
-    for (int i = 0; i <= 5; i++){
-        char c = input[0];
-    }
-    if (strings_not_equal(input, "giants"))
+
+    for (int i = 0; i <= 5; i++)
+        result[i] = string[input[i] & 0xf];
+
+    if (strings_not_equal(input, "flyers"))
         explode_bomb();
 }
 
 void phase_6(char ** input){
-    read_six_numbers();
+    char * numbers;
+    number = read_six_numbers();
 
+    for (int i = 0; i <= 5; i++) {
+    }
 }
 
 
