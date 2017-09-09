@@ -138,12 +138,58 @@ void phase_5(char * input){
         explode_bomb();
 }
 
-void phase_6(char ** input){
-    char * numbers;
-    number = read_six_numbers();
 
-    for (int i = 0; i <= 5; i++) {
+/*
+Singly-linked list structure
+
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x006032d0  4c01 0000 0100 0000 e032 6000 0000 0000  L........2`.....
+0x006032e0  a800 0000 0200 0000 f032 6000 0000 0000  .........2`.....
+0x006032f0  9c03 0000 0300 0000 0033 6000 0000 0000  .........3`.....
+0x00603300  b302 0000 0400 0000 1033 6000 0000 0000  .........3`.....
+0x00603310  dd01 0000 0500 0000 2033 6000 0000 0000  ........ 3`.....
+0x00603320  bb01 0000 0600 0000 0000 0000 0000 0000  ................
+             ^         ^         ^
+             |         |         |
+             |         |         `- Pointers to the next node.
+             |         `- Values stored in each node.
+             `- These values are arbitrary, depending on the binary.
+
+The arrangement of the singly-linked list depends on our input because the pointers
+from one node to the next are determined by it (i.e: 1 2 3 4 5 6, would cause pointer
+containing 1 in, what we'll call, the index field to point to the node containing 2,
+3 to 4, &c...). The program then proceeds to iterate through the linked-list in order
+comparing the current value to the next and if the value field of that current node is
+greater than the next the bomb explodes.
+
+key: 4 3 2 1 6 5
+*/
+struct {
+    int value,
+    int index,
+    int * next
+} node;
+
+void phase_6(char ** input){
+    int * numbers;
+    int curr, next, i, j;
+    struct node nodes[5];
+
+    numbers = read_six_numbers();
+
+    for (i = 0; i <= 5; i++) {
+        curr = numbers[i];
+        if (curr > `6)
+            explode_bomb();
+        for (j = 0; j <= 5; j++)
+            next = numbers[i+1]
+            if (curr == next)
+                explode_bomb();
     }
+    for (i = 0; i <= 5; i++)
+        numbers[i] = 7 - numbers[i];
+
+    // NOTE: Too lazy to do full reversal. See above.
 }
 
 
