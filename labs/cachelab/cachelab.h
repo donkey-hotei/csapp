@@ -20,9 +20,9 @@ typedef struct trans_func{
  * printSummary - This function provides a standard way for your cache
  * simulator * to display its final hit and miss statistics
  */ 
-void printSummary(int hits,  /* number of  hits */
-				  int misses, /* number of misses */
-				  int evictions); /* number of evictions */
+void printSummary(int hits,       /* number of  hits */
+                  int misses,     /* number of misses */
+                  int evictions); /* number of evictions */
 
 /* Fill the matrix with data */
 void initMatrix(int M, int N, int A[N][M], int B[M][N]);
