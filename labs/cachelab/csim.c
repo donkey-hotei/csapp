@@ -196,12 +196,13 @@ void accessData(mem_addr_t address) {
     if (cache_set_is_full) {
         // evict a line using LRU replacement policy
         line_index = getLRUCacheLineIndex(cache_set);
-        cache_set.lines[line_index].is_valid = 1;
+        cache_set.lines[line_index].tag = tag;
         cache_set.lines[line_index].num_accesses++;
     } else {
         // use first empty line
         line_index = getEmptyCacheLineIndex(cache_set);
         cache_set.lines[line_index].is_valid = 1;
+        cache_set.lines[line_index].tag = tag;
         cache_set.lines[line_index].num_accesses++;
     }
     return;
