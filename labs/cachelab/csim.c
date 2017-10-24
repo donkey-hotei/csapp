@@ -230,10 +230,9 @@ void replayTrace(char * trace_file_path) {
     while ((read = getline(&trace_line, &len, trace_file_p)) != -1) {
         sscanf(trace_line, " %c %llx,%d", &access_cmd, &address, &size);
 
-        accessData(address);
-
         switch(access_cmd) {
             case 'M':
+                accessData(address);
                 accessData(address);
                 break;
             case 'L':
