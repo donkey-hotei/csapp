@@ -17,19 +17,52 @@ int is_transpose(int M, int N, int A[N][M], int B[M][N]);
  *     will be graded on for Part B of the assignment. Do not change
  *     the description string "Transpose submission", as the driver
  *     searches for that string to identify the transpose function to
- *     be graded. 
+ *     be graded.
  */
 char transpose_submit_desc[] = "Transpose submission";
 void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 {
+    transpose_32_32(M, N, A, B);
 }
+
 
 /* 
  * You can define additional transpose functions below. We've defined
  * a simple one below to help you get started. 
- */ 
+ */
 
-/* 
+
+char transpose_32_32_desc[] = "32 by 32 Transpose submission";
+void transpose_32_32(int M, int N, int A[N][M], int B[M][N]) {
+    int block_size, i, j, block_i, block_j,
+        block_diag_elem, block_diag_index;
+    /*
+     * sizeof(int) is 4 bytes and there are 32 bytes per block.
+     * if we divide that by 4 bytes we get 8 integers per block.
+     */
+    block_size = 8;
+    /*
+     * break up the matrix into square sub-matrices as large
+     * as large a block.
+     */
+    for (j = 0; j < M; j += block_size)
+    for (i = 0; i < N; i += block_size)
+    for (block_i = i; block_i < i + block_size; ++block_i) {
+        for (block_j = j; block_j < j + block_size; ++block_j) {
+            if (block_i != block_j)
+                B[block_j][block_i] = A[block_i][block_j];
+            else {
+                block_diag_elem = A[block_i][block_j];
+                block_diag_index = block_i;
+            }
+        }
+        if (i == j)
+            B[block_diag_index][block_diag_index] = block_diag_elem;
+    }
+}
+
+
+/*
  * trans - A simple baseline transpose function, not optimized for the cache.
  */
 char trans_desc[] = "Simple row-wise scan transpose";
@@ -42,7 +75,7 @@ void trans(int M, int N, int A[N][M], int B[M][N])
             tmp = A[i][j];
             B[j][i] = tmp;
         }
-    }    
+    }
 
 }
 
