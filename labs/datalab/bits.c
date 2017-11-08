@@ -282,8 +282,7 @@ int isPositive(int x) {
      * shifing that result all the way over to the
      * lowest bit.
      */
-    int high_bit = 0x8 << 28;
-    return !((x & high_bit) >> 31 | !x);
+    return !(x >> 31 | !x);
 }
 /*
  * isLessOrEqual - if x <= y  then return 1, else return 0 
