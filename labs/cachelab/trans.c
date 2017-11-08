@@ -45,8 +45,8 @@ void transpose_32_32(int M, int N, int A[N][M], int B[M][N]) {
      */
     block_size = M / sizeof(int); // 8
     /*
-     * break up the matrix into square sub-matrices as large
-     * as large a block.
+     * break up the matrix into square sub-matrices
+     * as large a block
      */
     for (j = 0; j < M; j += block_size)
     for (i = 0; i < N; i += block_size)
