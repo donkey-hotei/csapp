@@ -29,13 +29,16 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
         case 64:
             transpose_64_64(M, N, A, B);
             break;
+        case 61:
+            transpose_61_67(M, N, A, B);
+            break;
     }
 }
 
 char transpose_32_32_desc[] = "32 by 32 Transpose submission";
 void transpose_32_32(int M, int N, int A[N][M], int B[M][N]) {
     int block_size, i, j, ii, jj,
-        block_diag_elem, block_diag_index;
+        diag_elem, diag_index;
     /*
      * sizeof(int) is 4 bytes and there are 32 bytes per block.
      * if we divide that by 4 bytes we get 8 integers per block.
@@ -52,12 +55,12 @@ void transpose_32_32(int M, int N, int A[N][M], int B[M][N]) {
             if (ii != jj)
                 B[jj][ii] = A[ii][jj];
             else {
-                block_diag_elem = A[ii][jj];
-                block_diag_index = ii;
+                diag_elem = A[ii][jj];
+                diag_index = ii;
             }
         }
         if (i == j)
-            B[block_diag_index][block_diag_index] = block_diag_elem;
+            B[diag_index][diag_index] = diag_elem;
     }
 }
 
@@ -67,22 +70,27 @@ void transpose_64_64(int M, int N, int A[N][M], int B[M][N]) {
     int block_size = 8;
     int i, j, k;
     int * ptr;
-
-    for (j = 0; j < M; j += block_size)
-    for (i = 0; j < N; j += block_size) {
+    /*
+     * We perform transpose on 8 by 8 blocks for
+     * 64 by 64 matrix, and within each block we
+     * transpose two 4 by 8 sub-blocks.
+     */
+    for (j = 0; j < N; j += block_size)
+    for (i = 0; j < M; j += block_size) {
         for (k = 0; k < block_size; k++) {
-            // create two 4 x 8 sub-blocks
             ptr = &A[i+k][j];
             v0  = ptr[0];
             v1  = ptr[1];
             v2  = ptr[2];
             v3  = ptr[3];
+
             if (!k) {
                 v4 = ptr[4];
                 v5 = ptr[5];
                 v6 = ptr[6];
                 v7 = ptr[7];
             }
+
             ptr = &B[j][i+k];
             ptr[0]   = v0;
             ptr[64]  = v1;
@@ -109,6 +117,23 @@ void transpose_64_64(int M, int N, int A[N][M], int B[M][N]) {
     }
 }
 
+char transpose_61_67_desc[] = "Transpose 61 x 67 matrix";
+void transpose_61_67(int M, int N, int A[N][M], int B[M][N]) {
+    int i, j, ii, jj, tmp;
+    for (i = 0; i < N; i += 16)
+    for (j = 0; j < M; j += 4)
+    for (ii = i; (ii < i + 16 && ii < N); ++ii) {
+        for (jj = j; (jj < j + 4 && jj < M); ++jj) {
+            if (ii - i == jj - j)
+                tmp = A[ii][jj];
+            else
+                B[jj][ii] = A[ii][jj];
+        }
+        for (jj = j; (jj < j + 4 && jj < M); ++jj)
+            if (ii - i == jj - j)
+                B[jj][ii] = tmp;
+    }
+}
 /*
  * trans - A simple baseline transpose function, not optimized for the cache.
  */
