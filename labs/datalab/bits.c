@@ -154,8 +154,11 @@ int bitAnd(int x, int y) {
  */
 int getByte(int x, int n) {
     /*
-     * Shift by n-bytes and mask out all but
-     * the lowest significant byte.
+     * Finds the nth byte from the left by
+     * shifting x to the right 8*n places
+     * (since there are 8 bits in a byte).
+     * Retrurn the LSB by masking out all but
+     * the LSB.
      */
     return (x >> (n << 3)) & 0xff;
 }
@@ -216,8 +219,11 @@ int bang(int x) {
     /*
      * Propgate any 1's to the left by shifting
      * in successive halves of a word and OR'ing
-     * against itself (unshifted). Finally inverting
-     * those bits and AND'ing against 1.
+     * against it's unshifted self). This is to
+     * be sure that any and all bits eventually
+     * become the least significant bit. Finally
+     * we flip that bit AND'ing with 1 s.t. the
+     * result is zero iff there were no on bits.
      */
     x = (x >> 16) | x;
     x = (x >> 8)  | x;
@@ -227,12 +233,15 @@ int bang(int x) {
     return ~x & 1;
 }
 /*
- * tmin - return minimum two's complement integer 
+ * tmin - return minimum two's complement integer
  *   Legal ops: ! ~ & ^ | + << >>
  *   Max ops: 4
  *   Rating: 1
  */
 int tmin(void) {
+  /* The smallest 32-bit number has only the sign bit
+   * turned on.
+   */
   return 1 << 31;
 }
 /*
@@ -245,7 +254,13 @@ int tmin(void) {
  *   Rating: 2
  */
 int fitsBits(int x, int n) {
-  return 2;
+    /* Idea is that a number x truncated to
+     * n-bits should be the same as it's
+     * untruncated self if it can fit into n-bits.
+     */
+    int s = 32 + (~n + 1);  // shift 32 - n
+    int t = (x << s) >> s;  // sign-extension will change x
+    return !(x ^ t); // x equal to truncated x?
 }
 /*
  * divpwr2 - Compute x/(2^n), for 0 <= n <= 30
@@ -256,7 +271,9 @@ int fitsBits(int x, int n) {
  *   Rating: 2
  */
 int divpwr2(int x, int n) {
-    return (x >> n);
+    int s = (1 << n) + ~0;
+    int t = (x >> 31) & s;
+    return (x + t) >> n;
 }
 /*
  * negate - return -x
@@ -266,6 +283,12 @@ int divpwr2(int x, int n) {
  *   Rating: 2
  */
 int negate(int x) {
+    /* By flipping all the bits and adding 1 we can
+     * obtain either the negative version of a positive
+     * number (i.e: 11111111 is -1, and 1 is 00000001)
+     * and vice versa. The case of zero is taken care of
+     * because the leftmost significant bit is carried out.
+     */
     return ~x + 1;
 }
 /*
@@ -276,11 +299,9 @@ int negate(int x) {
  *   Rating: 3
  */
 int isPositive(int x) {
-    /*
-     * Check if the sign-bit is on by masking with
-     * the high bit 0b10000000000000000000000000000000,
-     * shifing that result all the way over to the
-     * lowest bit.
+    /* Check if the sign bit is on or if
+     * x is zero, if so then return 1 else
+     * return 0.
      */
     return !(x >> 31 | !x);
 }
@@ -292,9 +313,16 @@ int isPositive(int x) {
  *   Rating: 3
  */
 int isLessOrEqual(int x, int y) {
-    int s = !(x >> 31) ^ !(y >> 31);
-    return (s & (x >> 31)) | \
-        (!s & !((y + (~x + 1)) >> 31));
+    /* First determine if both x and y have the same sign,
+     * if x is the negative of the two in the case that they
+     * have differing signs, and determine if x is greater
+     * than y. Use these three facts to determine if x <= y.
+     */
+    int s = !(x >> 31) ^ !(y >> 31);  // 0 if same sign, 1 otherwise
+    int t = (s & (x >> 31));   // 1 if x is the negative of two, 0 otherwise
+    int u = (y + (~x + 1));    // negative if x > y, postive if x < y, 0 if x = y
+    int v = (!s & !(u >> 31)); // if y - x > 0 and have same sign then 1 else 0
+    return t | v;  // 1 if x is the negative of the two or y - x > 0
 }
 /*
  * ilog2 - return floor(log base 2 of x), where x > 0
