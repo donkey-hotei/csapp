@@ -12,7 +12,7 @@
 
 int is_transpose(int M, int N, int A[N][M], int B[M][N]);
 
-/* 
+/*
  * transpose_submit - This is the solution transpose function that you
  *     will be graded on for Part B of the assignment. Do not change
  *     the description string "Transpose submission", as the driver
@@ -45,8 +45,11 @@ void transpose_32_32(int M, int N, int A[N][M], int B[M][N]) {
      */
     block_size = M / sizeof(int); // 8
     /*
-     * break up the matrix into square sub-matrices
-     * as large a block
+     * break up the matrix into square sub-matrices of blocksize
+     * squared, fitting a single row into a cacheline.
+     * diag_elem and diag_index are used to avoid misses - one to
+     * store the value and the other to store the position which
+     * helps to avoid having to re-access those elements.
      */
     for (j = 0; j < M; j += block_size)
     for (i = 0; i < N; i += block_size)
@@ -59,63 +62,35 @@ void transpose_32_32(int M, int N, int A[N][M], int B[M][N]) {
                 diag_index = ii;
             }
         }
+        // there is only one element in the diagonal each traversal
         if (i == j)
             B[diag_index][diag_index] = diag_elem;
     }
 }
 
-char transpose_64_64_desc[] = "64 by 64 Transpose submission";
+
+char transpose_64_64_desc[] = "32 by 32 Transpose submission";
 void transpose_64_64(int M, int N, int A[N][M], int B[M][N]) {
-    int v0, v1, v2, v3, v4, v5, v6, v7;
-    int block_size = 8;
-    int i, j, k;
-    int * ptr;
-    /*
-     * We perform transpose on 8 by 8 blocks for
-     * 64 by 64 matrix, and within each block we
-     * transpose two 4 by 8 sub-blocks.
-     */
-    for (j = 0; j < N; j += block_size)
-    for (i = 0; j < M; j += block_size) {
-        for (k = 0; k < block_size; k++) {
-            ptr = &A[i+k][j];
-            v0  = ptr[0];
-            v1  = ptr[1];
-            v2  = ptr[2];
-            v3  = ptr[3];
-
-            if (!k) {
-                v4 = ptr[4];
-                v5 = ptr[5];
-                v6 = ptr[6];
-                v7 = ptr[7];
+    int block_size, i, j, ii, jj,
+        diag_elem, diag_index;
+    block_size = 4;
+    for (j = 0; j < M; j += block_size)
+    for (i = 0; i < N; i += block_size)
+    for (ii = i; (ii < N) && ii < i + block_size; ++ii) {
+        for (jj = j; (jj < M) && jj < j + block_size; ++jj) {
+            if (ii != jj)
+                B[jj][ii] = A[ii][jj];
+            else {
+                diag_elem = A[ii][jj];
+                diag_index = ii;
             }
-
-            ptr = &B[j][i+k];
-            ptr[0]   = v0;
-            ptr[64]  = v1;
-            ptr[128] = v2;
-            ptr[192] = v3;
         }
-        for (k = 7; k > 0; k--) {
-            ptr = &A[i+k][j+4];
-            v0  = ptr[0];
-            v1  = ptr[1];
-            v2  = ptr[2];
-            v3  = ptr[3];
-            ptr = &B[j+4][i+k];
-            ptr[0]   = v0;
-            ptr[64]  = v1;
-            ptr[128] = v3;
-            ptr[192] = v4;
-        }
-        ptr = &B[j+4][i];
-        ptr[0]   = v4;
-        ptr[64]  = v5;
-        ptr[128] = v6;
-        ptr[192] = v7;
+        if (i == j)
+            B[diag_index][diag_index] = diag_elem;
     }
 }
+
+
 
 char transpose_61_67_desc[] = "Transpose 61 x 67 matrix";
 void transpose_61_67(int M, int N, int A[N][M], int B[M][N]) {
