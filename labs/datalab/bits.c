@@ -271,9 +271,16 @@ int fitsBits(int x, int n) {
  *   Rating: 2
  */
 int divpwr2(int x, int n) {
-    int s = (1 << n) + ~0;
-    int t = (x >> 31) & s;
-    return (x + t) >> n;
+    /* When x is positive, x / 2^n == x >> n but
+     * when x is negative, x / 2^n == (x + 1 << n - 1) >> n.
+     *
+     * The reason for this is that shifting right by n will
+     * round towards infinity but adding a "bias" by adding
+     * one when the quotient is negative and odd that will
+     * round the remainder towards zero.
+     */
+    int s = (x >> 31) & (1 << n) + ~0;
+    return  (x + s) >> n;
 }
 /*
  * negate - return -x
