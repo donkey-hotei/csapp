@@ -164,11 +164,24 @@ int main(int argc, char **argv)
 */
 void eval(char *cmdline)
 {
-    char * buffer; // local buffer for storing copy of cmdline
-    char ** _argv; // fake argv
-    int should_bg;
+    char * argv[MAXARGS] = { NULL }; // argument list
+    int bg;               // background the job?
 
-    should_bg
+    bg = parseline(cmdline, argv);
+
+    sigset_t signalset; // signal set used as mask
+    sigemptyset(&signalset);
+
+    // ignore an empty arg list
+    if (argv[0] == NULL)
+        return;
+
+    if (!builtin_cmd(argv) && bg) {
+    } else {
+        do_bgfg(argv);  // fg or fg by job id
+    }
+
+    parseline(cmdline, argv);
     return;
 }
 
@@ -177,9 +190,9 @@ void eval(char *cmdline)
  *
  * Characters enclosed in single quotes are treated as a single
  * argument.  Return true if the user has requested a BG job, false if
- * the user has requested a FG job.  
+ * the user has requested a FG job.
  */
-int parseline(const char *cmdline, char **argv) 
+int parseline(const char *cmdline, char **argv)
 {
     static char array[MAXLINE]; /* holds local copy of command line */
     char *buf = array;          /* ptr that traverses command line */
@@ -236,6 +249,18 @@ int parseline(const char *cmdline, char **argv)
  */
 int builtin_cmd(char **argv) 
 {
+    char * cmd;
+    cmd = argv[0];
+
+    if (!strcmp(cmd, "fg")) {
+        return 1; }
+    else if (!strcmp(cmd, "bg"))
+        return 1;
+    else if (!strcmp(cmd, "job"))
+        return 1;
+    else if (!strcmp(cmd, "quit"))
+        return 1;
+
     return 0;     /* not a builtin command */
 }
 
@@ -244,6 +269,15 @@ int builtin_cmd(char **argv)
  */
 void do_bgfg(char **argv) 
 {
+    char * cmd;
+    char * job;
+    int job_id;
+
+    cmd = argv[0];
+    job = argv[1];
+
+    job_id = atoi(job);
+
     return;
 }
 
