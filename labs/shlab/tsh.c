@@ -25,7 +25,7 @@
 #define BG 2    /* running in background */
 #define ST 3    /* stopped */
 
-/* 
+/*
  * Jobs states: FG (foreground), BG (background), ST (stopped)
  * Job state transitions and enabling actions:
  *     FG -> ST  : ctrl-z
@@ -65,14 +65,14 @@ void sigtstp_handler(int sig);
 void sigint_handler(int sig);
 
 /* Here are helper routines that we've provided for you */
-int parseline(const char *cmdline, char **argv); 
+int parseline(const char *cmdline, char **argv);
 void sigquit_handler(int sig);
 
 void clearjob(struct job_t *job);
 void initjobs(struct job_t *jobs);
-int maxjid(struct job_t *jobs); 
+int maxjid(struct job_t *jobs);
 int addjob(struct job_t *jobs, pid_t pid, int state, char *cmdline);
-int deletejob(struct job_t *jobs, pid_t pid); 
+int deletejob(struct job_t *jobs, pid_t pid);
 pid_t fgpid(struct job_t *jobs);
 struct job_t *getjobpid(struct job_t *jobs, pid_t pid);
 struct job_t *getjobjid(struct job_t *jobs, int jid); 
@@ -86,9 +86,9 @@ typedef void handler_t(int);
 handler_t *Signal(int signum, handler_t *handler);
 
 /*
- * main - The shell's main routine 
+ * main - The shell's main routine
  */
-int main(int argc, char **argv) 
+int main(int argc, char **argv)
 {
     char c;
     char cmdline[MAXLINE];
@@ -169,8 +169,8 @@ void eval(char *cmdline)
 
     bg = parseline(cmdline, argv);
 
-    sigset_t signalset; // signal set used as mask
-    sigemptyset(&signalset);
+    sigset_t sigmask;
+    sigemptyset(&sigmask);
 
     // ignore an empty arg list
     if (argv[0] == NULL)
@@ -277,6 +277,8 @@ void do_bgfg(char **argv)
     job = argv[1];
 
     job_id = atoi(job);
+
+    printf("%d is the job id\n", job_id);
 
     return;
 }
