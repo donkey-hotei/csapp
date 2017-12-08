@@ -164,24 +164,50 @@ int main(int argc, char **argv)
 */
 void eval(char *cmdline)
 {
-    char * argv[MAXARGS] = { NULL }; // argument list
+    char buf[MAXLINE];    // buffer to hold user commands
+    char * argv[MAXARGS]; // argument list
     int bg;               // background the job?
+    pid_t cpid;           // child process id
+    sigset_t ss_mask;     // signal set to act as mask
 
-    bg = parseline(cmdline, argv);
+    strcpy(buf, cmdline);
+    bg = parseline(buf, argv);
 
-    sigset_t sigmask;
-    sigemptyset(&sigmask);
+    /* ignore parseline error */
+    if (bg == -1) return;
+    /* ignore an empty argument list */
+    if (argv[0] == NULL) return;
 
-    // ignore an empty arg list
-    if (argv[0] == NULL)
-        return;
+    if (!builtin_cmd(argv)) {
+        /* We use a signal set to act as a mask
+         * to block out the SIGCHLD signal which
+         * will prevent the race condition where
+         * the child exits before the parent add's
+         * it to the job list.
+         */
+        sigemptyset(&ss_mask);
+        sigaddset(&ss_mask, SIGCHLD);
+        sigprocmask(SIG_BLOCK, &ss_mask, NULL);
 
-    if (!builtin_cmd(argv) && bg) {
-    } else {
-        do_bgfg(argv);  // fg or fg by job id
+        /* Within the child ... */
+        if ((cpid = fork()) == 0) {
+            /* To prevent race conditions we move the
+             * process to the same process group as the
+             * parent.
+             */
+            setpgid(0, 0);
+            sigprocmask(SIG_UNBLOCK, &ss_mask, NULL);
+            if (execve(argv[0], argv, environ) < 0) {
+                printf("No such command %s found.\n", argv[0]);
+                return;
+            }
+        }
     }
 
-    parseline(cmdline, argv);
+    addjob(jobs, cpid, 0, cmdline);
+
+    if (bg) { } else { }
+
     return;
 }
 
@@ -249,17 +275,24 @@ int parseline(const char *cmdline, char **argv)
  */
 int builtin_cmd(char **argv) 
 {
-    char * cmd;
-    cmd = argv[0];
+    if (argv[0] == NULL)
+        return 0;
 
-    if (!strcmp(cmd, "fg")) {
-        return 1; }
-    else if (!strcmp(cmd, "bg"))
+    if (!strcmp(argv[0], "fg") || !strcmp(argv[0], "bg")) {
+        do_bgfg(argv);
         return 1;
-    else if (!strcmp(cmd, "job"))
+    }
+
+    else if (!strcmp(argv[0], "jobs")) {
+        listjobs(jobs);
         return 1;
-    else if (!strcmp(cmd, "quit"))
+    }
+
+    else if (!strcmp(argv[0], "&"))
         return 1;
+
+    else if (!strcmp(argv[0], "quit"))
+        exit(0);
 
     return 0;     /* not a builtin command */
 }
@@ -267,18 +300,23 @@ int builtin_cmd(char **argv)
 /* 
  * do_bgfg - Execute the builtin bg and fg commands
  */
-void do_bgfg(char **argv) 
+void do_bgfg(char **argv)
 {
-    char * cmd;
-    char * job;
-    int job_id;
+    struct job_t * job;
 
-    cmd = argv[0];
-    job = argv[1];
+    if (argv[1] == NULL) {
+        printf("%s requires a job id.\n", argv[0]);
+        return;
+    }
 
-    job_id = atoi(job);
 
-    printf("%d is the job id\n", job_id);
+    if (!strcmp(argv[1], "%")) {
+        job = getjobjid(jobs, (long int)argv[1]);
+
+        if (job == NULL)
+            printf("No job with pid %s found.\n", argv[1]);
+            return;
+    }
 
     return;
 }
@@ -288,7 +326,18 @@ void do_bgfg(char **argv)
  */
 void waitfg(pid_t pid)
 {
-    return;
+    pid_t cpid;
+    if ((cpid = waitpid(pid, NULL, WUNTRACED)) < 0) {
+        printf("in waitfg, waiting for child to be reaped.\n");
+        deletejob(jobs, pid);
+    } else {
+        printf("waitfg error!\n");
+        exit(0);
+    }
+    /* Block until no longer in foreground.
+     */
+    if (pid == fgpid(jobs))
+        sleep(0);
 }
 
 /*****************
@@ -348,7 +397,7 @@ void initjobs(struct job_t *jobs) {
     int i;
 
     for (i = 0; i < MAXJOBS; i++)
-    clearjob(&jobs[i]);
+        clearjob(&jobs[i]);
 }
 
 /* maxjid - Returns largest allocated job ID */
@@ -357,8 +406,9 @@ int maxjid(struct job_t *jobs)
     int i, max=0;
 
     for (i = 0; i < MAXJOBS; i++)
-    if (jobs[i].jid > max)
-        max = jobs[i].jid;
+        if (jobs[i].jid > max)
+            max = jobs[i].jid;
+
     return max;
 }
 
@@ -366,23 +416,26 @@ int maxjid(struct job_t *jobs)
 int addjob(struct job_t *jobs, pid_t pid, int state, char *cmdline) 
 {
     int i;
-    
+
     if (pid < 1)
-    return 0;
+        return 0;
 
     for (i = 0; i < MAXJOBS; i++) {
-    if (jobs[i].pid == 0) {
-        jobs[i].pid = pid;
-        jobs[i].state = state;
-        jobs[i].jid = nextjid++;
-        if (nextjid > MAXJOBS)
-        nextjid = 1;
-        strcpy(jobs[i].cmdline, cmdline);
-        if(verbose){
-            printf("Added job [%d] %d %s\n", jobs[i].jid, jobs[i].pid, jobs[i].cmdline);
+        if (jobs[i].pid == 0) {
+            jobs[i].pid = pid;
+            jobs[i].state = state;
+            jobs[i].jid = nextjid++;
+
+            if (nextjid > MAXJOBS)
+                nextjid = 1;
+
+            strcpy(jobs[i].cmdline, cmdline);
+
+            if(verbose) {
+                printf("Added job [%d] %d %s\n", jobs[i].jid, jobs[i].pid, jobs[i].cmdline);
             }
             return 1;
-    }
+        }
     }
     printf("Tried to create too many jobs\n");
     return 0;
@@ -397,11 +450,11 @@ int deletejob(struct job_t *jobs, pid_t pid)
     return 0;
 
     for (i = 0; i < MAXJOBS; i++) {
-    if (jobs[i].pid == pid) {
-        clearjob(&jobs[i]);
-        nextjid = maxjid(jobs)+1;
-        return 1;
-    }
+        if (jobs[i].pid == pid) {
+            clearjob(&jobs[i]);
+            nextjid = maxjid(jobs)+1;
+            return 1;
+        }
     }
     return 0;
 }
@@ -459,26 +512,26 @@ int pid2jid(pid_t pid)
 void listjobs(struct job_t *jobs) 
 {
     int i;
-    
+
     for (i = 0; i < MAXJOBS; i++) {
-    if (jobs[i].pid != 0) {
-        printf("[%d] (%d) ", jobs[i].jid, jobs[i].pid);
-        switch (jobs[i].state) {
-        case BG: 
-            printf("Running ");
-            break;
-        case FG: 
-            printf("Foreground ");
-            break;
-        case ST: 
-            printf("Stopped ");
-            break;
-        default:
-            printf("listjobs: Internal error: job[%d].state=%d ", 
-               i, jobs[i].state);
+        if (jobs[i].pid != 0) {
+            printf("[%d] (%d) ", jobs[i].jid, jobs[i].pid);
+            switch (jobs[i].state) {
+            case BG: 
+                printf("Running ");
+                break;
+            case FG: 
+                printf("Foreground ");
+                break;
+            case ST: 
+                printf("Stopped ");
+                break;
+            default:
+                printf("listjobs: Internal error: job[%d].state=%d ", 
+                   i, jobs[i].state);
+            }
+            printf("%s", jobs[i].cmdline);
         }
-        printf("%s", jobs[i].cmdline);
-    }
     }
 }
 /******************************
