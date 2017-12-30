@@ -166,8 +166,7 @@ void eval(char *cmdline)
 {
     char buf[MAXLINE];    // buffer to hold user commands
     char * argv[MAXARGS]; // argument list
-    int bg;               // background the job?
-    pid_t cpid;           // child process id
+    int bg, status;       // background the job?, status of child
     sigset_t ss_mask;     // signal set to act as mask
 
     strcpy(buf, cmdline);
@@ -182,31 +181,43 @@ void eval(char *cmdline)
         /* We use a signal set to act as a mask
          * to block out the SIGCHLD signal which
          * will prevent the race condition where
-         * the child exits before the parent add's
+         * the child exits before the parent adds
          * it to the job list.
-         */
+          */
         sigemptyset(&ss_mask);
         sigaddset(&ss_mask, SIGCHLD);
         sigprocmask(SIG_BLOCK, &ss_mask, NULL);
 
-        /* Within the child ... */
-        if ((cpid = fork()) == 0) {
+	/* Fork child process. */
+	pid_t cpid = fork();
+
+        /* From within the child ... */
+        if (cpid == 0) {
             /* To prevent race conditions we move the
-             * process to the same process group as the
-             * parent.
+             * child process to a new process group
+             * than the parent.
              */
             setpgid(0, 0);
             sigprocmask(SIG_UNBLOCK, &ss_mask, NULL);
             if (execve(argv[0], argv, environ) < 0) {
-                printf("No such command %s found.\n", argv[0]);
-                return;
+                printf("%s: command not found.\n", argv[0]);
+		exit(0);
             }
         }
+
+	/* Add job to jobs list and unblock the SIGCHLD signal */
+        int state = bg ? BG : FG;
+	addjob(jobs, cpid, state, cmdline);
+	sigprocmask(SIG_UNBLOCK, &ss_mask, NULL);
+
+	/* Parent waits for child process to finish. */
+	if (!bg) { 
+	    if (waitpid(cpid, &status, 0) < 0)
+		unix_error("waitpid error: child encountered error");
+	} else {
+	    printf("%s: %d", argv[0], cpid);
+        }
     }
-
-    addjob(jobs, cpid, 0, cmdline);
-
-    if (bg) { } else { }
 
     return;
 }
@@ -303,19 +314,31 @@ int builtin_cmd(char **argv)
 void do_bgfg(char **argv)
 {
     struct job_t * job;
+    long int pid, jid;
 
     if (argv[1] == NULL) {
-        printf("%s requires a job id.\n", argv[0]);
+        printf("%s: argument must be a PID or job id.\n", argv[0]);
         return;
     }
 
 
     if (!strcmp(argv[1], "%")) {
-        job = getjobjid(jobs, (long int)argv[1]);
+	jid = strtol(argv[1], NULL, 10);
+        job = getjobjid(jobs, jid);
 
-        if (job == NULL)
-            printf("No job with pid %s found.\n", argv[1]);
+        if (job == NULL) {
+            printf("No job with jid %s found.\n", argv[1]);
             return;
+	}
+
+    } else {
+	pid = strtol(argv[1], NULL, 10);
+	job = getjobpid(jobs, pid);
+
+	if (job == NULL) {
+	    printf("No job with pid %s found \n", argv[1]);
+	    return;
+	}
     }
 
     return;
@@ -352,7 +375,7 @@ void waitfg(pid_t pid)
  *     currently running children to terminate.  
  */
 void sigchld_handler(int sig) 
-{
+{ 
     return;
 }
 
