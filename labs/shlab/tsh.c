@@ -376,6 +376,27 @@ void waitfg(pid_t pid)
  */
 void sigchld_handler(int sig) 
 { 
+	pid_t cpid;
+	int status;
+	sigset_t mask;
+
+	/* Add only the SIGCHLD signal to the signal set.
+     */
+	sigemptyset(&mask);
+	sigaddset(&mask, SIGCHLD);
+
+	while ((cpid = wait(&status)) > 0) {
+		/* After a change of state has happened in the
+		 * child, block all other SIGCHLD signals, delete
+         * the terminated or stopped child, and then unblock
+         * SIGCHLD. This is done to avoid waiting for any
+         * other currently running child to terminate.
+	     */
+		sigprocmask(SIG_BLOCK, &mask, NULL);
+		deletejobs(jobs, cpid);
+		sigprocmask(SIG_UNBLOCK, &mask, NULL);
+	}
+	
     return;
 }
 
@@ -386,7 +407,21 @@ void sigchld_handler(int sig)
  */
 void sigint_handler(int sig) 
 {
-    exit(0);
+	pid_t pid;
+	pid = fgpid(jobs);
+
+	if (pid <= 0)
+		return;
+
+	if (kill(-pid, SIGINT) < 0) {
+		unix_error("error while running kill in SIGINT handler.");
+		return;
+	}
+
+	printf("forground job [%d] has been killed.\n",
+		   pid2jid(pid));
+
+	deletejob(jobs, pid);
 }
 
 /*
@@ -396,6 +431,23 @@ void sigint_handler(int sig)
  */
 void sigtstp_handler(int sig) 
 {
+	pid_t pid;
+	pid = fgpid(jobs);
+
+	if (pid <= 0)
+		return;
+
+	if (kill(-pid, SIGTSTP) < 0) {
+		unix_error("error while running kill in SIGTSTP handler.");
+		return;		
+	}
+
+	struct job_t * job = getjobpid(jobs, pid);
+	job->state = ST;
+
+	printf("forground job [%d] has been stopped.\n", 
+           pid2jid(pid));
+	
     return;
 }
 
