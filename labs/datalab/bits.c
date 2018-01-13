@@ -339,7 +339,21 @@ int isLessOrEqual(int x, int y) {
  *   Rating: 4
  */
 int ilog2(int x) {
-    return 2;
+    /* Perform a binary search to find all on-bits and
+     * add their positions.
+     */
+    int r = 0, t;
+
+    t = ((~((x >> 16) + ~0U)) >> 27) & 16;
+    r |= t, x >>= t;
+    t = ((~((x >> 8) + ~0U)) >> 26)  & 8;
+    r |= t, x >>= t;
+    t = ((~((x >> 4) + ~0U)) >> 25)  & 4;
+    r |= t, x >>= t;
+    t = ((~((x >> 2) + ~0U)) >> 24)  & 2;
+    r |= t, x >>= t;
+
+    return (r | x >> 1);
 }
 /*
  * float_neg - Return bit-level equivalent of expression -f for
