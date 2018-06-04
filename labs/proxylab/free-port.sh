@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# free-port.sh - returns an unused TCP port. 
+# free-port.sh - returns an unused TCP port.
 #
 PORT_START=4500
 PORT_MAX=65000

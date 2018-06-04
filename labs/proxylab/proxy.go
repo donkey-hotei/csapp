@@ -1,78 +1,87 @@
-package proxy
+package main
 
 import (
-     //  "flag"
     "fmt"
-    "io"
-    "log"
+    "flag"
     "net"
+    "os"
+    "strings"
 )
 
+/*
+ * Generic error handler which exits the program if error exists.
+ */
+func checkError(err error) {
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Fatal error: %s", err.Error())
+        os.Exit(1)
+    }
+}
 
 /*
- * A simple TCP proxy that caches web objects.
+ * Handle incoming client connections.
  */
-func Proxy(srvConn, cliConn *net.TCPConn) {
-    serverClosed := make(chan struct{}, 1)
-    clientClosed := make(chan struct{}, 1)
+func handleClient(conn net.Conn) {
+    var buf [512]byte
+    for {
+        nBytes, readErr := conn.Read(buf[0:])
+        if readErr != nil {
+            continue
+        }
 
-    go cacheBroker(srvConn, cliConn, clientClosed)
+        parseHttpRequest(string(buf[0:]))
 
-    var waitFor chan struct{}
-
-    select {
-        case <-clientClosed:
-            srvConn.SetLinger(0)
-            srvConn.CloseRead()
-            waitFor = serverClosed
-        case <- serverClosed:
-            cliConn.CloseRead()
-            waitFor = clientClosed
-    }
-    <-waitFor
-}
-
-
-func cacheBroker(dst, src net.Conn, srcClose chan struct{}) {
-    _, err := io.Copy(dst, src)
-    if err != nil {
-        log.Printf("Copy error: %s", err)
-    }
-
-    if err := src.Close(); err != nil {
-
+        _, writeErr := conn.Write(buf[0:nBytes])
+        if writeErr != nil {
+            return
+        }
     }
 }
 
+/*
+ *
+ */
+type HttpRequest struct {
+}
+
+func parseHttpVersion () {
+}
+
+/*
+ * Parses an HTTP request according to RFC 1945
+ * with the exception of multiline request fields.
+ */
+func parseHttpRequest(request string) HttpRequest {
+    httpRequest := HttpRequest{}
+
+    requestLines := strings.Split(request, "\n")
+    httpRequest.Version = parseHttpVersion(requestLines[0])
+
+    return httpRequest
+}
 
 func main() {
-    client := "localhost:10042"
-    server := "localhost:10043"
+    fmt.Printf("[+] Starting TCP proxy\n")
 
-    clientListener, err := net.TCPListener("tcp", client)
-    if err != nil {
-        log.Printf("Error connecting to %s", client)
-    }
+    var port = flag.Int("port", 1234, "listening port number for proxy")
+    flag.Parse()
 
-    defer clientListener.Close()
+    clientPort := fmt.Sprintf(":%d", *port)
 
-    serverListener, err := net.Listen("tcp", server)
-    if err != nil {
-        log.Printf("Error connecting to %s", server)
-    }
+    fmt.Printf("[*] Resolving TCP address localhost:%s\n", *port)
+    laddr, err := net.ResolveTCPAddr("tcp4", clientPort)
+    checkError(err)
 
-    defer serverListener.Close()
+    fmt.Printf("[*] Proxy listening for client @ localhost:%d\n", *port)
+    clientListener, err := net.ListenTCP("tcp", laddr)
+    checkError(err)
 
     for {
         clientConn, err := clientListener.Accept()
         if err != nil {
-            log.Printf("Error accepting %s", err.Error())
+            continue
         }
-        serverConn, err := serverListener.Accept()
-        if err != nil {
-            log.Printf("Error accepting %s", err.Error())
-        }
-
-        go Proxy(serverConn, clientConn)
+        fmt.Printf("[*] Accepted Client Connection\n")
+        handleClient(clientConn)
     }
 }
