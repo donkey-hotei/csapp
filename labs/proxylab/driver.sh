@@ -49,10 +49,10 @@ FETCH_FILE="home.html"
 # usage: download_proxy <testdir> <filename> <origin_url> <proxy_url>
 #
 function download_proxy {
-    cd $1
-    curl --max-time ${TIMEOUT} --silent --proxy $4 --output $2 $3
+    cd "$1"
+    curl --max-time ${TIMEOUT} --silent --proxy "$4" --output "$2" "$3"
     (( $? == 28 )) && echo "Error: Fetch timed out after ${TIMEOUT} seconds"
-    cd $HOME_DIR
+    cd "$HOME_DIR"
 }
 
 #
@@ -60,10 +60,10 @@ function download_proxy {
 # usage: download_noproxy <testdir> <filename> <origin_url>
 #
 function download_noproxy {
-    cd $1
-    curl --max-time ${TIMEOUT} --silent --output $2 $3
+    cd "$1"
+    curl --max-time ${TIMEOUT} --silent --output "$2" "$3"
     (( $? == 28 )) && echo "Error: Fetch timed out after ${TIMEOUT} seconds"
-    cd $HOME_DIR
+    cd "$HOME_DIR"
 }
 
 #
@@ -167,7 +167,7 @@ then
 fi
 for file in ${BASIC_LIST}
 do
-    if [ ! -e ./tiny/${file} ]
+    if [ ! -e "./tiny/${file}" ]
     then
         echo "Error: ./tiny/${file} not found."
         exit
@@ -211,9 +211,9 @@ echo "*** Basic ***"
 tiny_port=$(free_port)
 echo "Starting tiny on ${tiny_port}"
 cd ./tiny
-./tiny ${tiny_port}   &> /dev/null  &
+./tiny "${tiny_port}"   &> /dev/null  &
 tiny_pid=$!
-cd ${HOME_DIR}
+cd "${HOME_DIR}"
 
 # Wait for tiny to start in earnest
 wait_for_port_use "${tiny_port}"
@@ -221,7 +221,7 @@ wait_for_port_use "${tiny_port}"
 # Run the proxy
 proxy_port=$(free_port)
 echo "Starting proxy on ${proxy_port}"
-./proxy ${proxy_port}  &> /dev/null &
+./proxy "${proxy_port}" &> /dev/null &
 proxy_pid=$!
 
 # Wait for the proxy to start in earnest
@@ -240,15 +240,15 @@ do
 
     # Fetch using the proxy
     echo "   Fetching ./tiny/${file} into ${PROXY_DIR} using the proxy"
-    download_proxy $PROXY_DIR ${file} "http://localhost:${tiny_port}/${file}" "http://localhost:${proxy_port}"
+    download_proxy $PROXY_DIR "${file}" "http://localhost:${tiny_port}/${file}" "http://localhost:${proxy_port}"
 
     # Fetch directly from Tiny
     echo "   Fetching ./tiny/${file} into ${NOPROXY_DIR} directly from Tiny"
-    download_noproxy $NOPROXY_DIR ${file} "http://localhost:${tiny_port}/${file}"
+    download_noproxy $NOPROXY_DIR "${file}" "http://localhost:${tiny_port}/${file}"
 
     # Compare the two files
     echo "   Comparing the two files"
-    diff -q ${PROXY_DIR}/${file} ${NOPROXY_DIR}/${file} &> /dev/null
+    diff -q "${PROXY_DIR}/${file}" "${NOPROXY_DIR}/${file}" &> /dev/null
     if [ $? -eq 0 ]; then
         numSucceeded=`expr ${numSucceeded} + 1`
         echo "   Success: Files are identical."
@@ -258,10 +258,10 @@ do
 done
 
 echo "Killing tiny and proxy"
-kill $tiny_pid 2> /dev/null
-wait $tiny_pid 2> /dev/null
-kill $proxy_pid 2> /dev/null
-wait $proxy_pid 2> /dev/null
+kill "$tiny_pid" 2> /dev/null
+wait "$tiny_pid" 2> /dev/null
+kill "$proxy_pid" 2> /dev/null
+wait "$proxy_pid" 2> /dev/null
 
 basicScore=`expr ${MAX_BASIC} \* ${numSucceeded} / ${numRun}`
 
@@ -279,9 +279,9 @@ echo "*** Concurrency ***"
 tiny_port=$(free_port)
 echo "Starting tiny on port ${tiny_port}"
 cd ./tiny
-./tiny ${tiny_port} &> /dev/null &
+./tiny "${tiny_port}" &> /dev/null &
 tiny_pid=$!
-cd ${HOME_DIR}
+cd "${HOME_DIR}"
 
 # Wait for tiny to start in earnest
 wait_for_port_use "${tiny_port}"
@@ -289,7 +289,7 @@ wait_for_port_use "${tiny_port}"
 # Run the proxy
 proxy_port=$(free_port)
 echo "Starting proxy on port ${proxy_port}"
-./proxy ${proxy_port} &> /dev/null &
+./proxy "${proxy_port}" &> /dev/null &
 proxy_pid=$!
 
 # Wait for the proxy to start in earnest
@@ -298,7 +298,7 @@ wait_for_port_use "${proxy_port}"
 # Run a special blocking nop-server that never responds to requests
 nop_port=$(free_port)
 echo "Starting the blocking NOP server on port ${nop_port}"
-./nop-server.py ${nop_port} &> /dev/null &
+./nop-server.py "${nop_port}" &> /dev/null &
 nop_pid=$!
 
 # Wait for the nop server to start in earnest
@@ -330,12 +330,12 @@ fi
 
 # Clean up
 echo "Killing tiny, proxy, and nop-server"
-kill $tiny_pid 2> /dev/null
-wait $tiny_pid 2> /dev/null
-kill $proxy_pid 2> /dev/null
-wait $proxy_pid 2> /dev/null
-kill $nop_pid 2> /dev/null
-wait $nop_pid 2> /dev/null
+kill "$tiny_pid" 2> /dev/null
+wait "$tiny_pid" 2> /dev/null
+kill "$proxy_pid" 2> /dev/null
+wait "$proxy_pid" 2> /dev/null
+kill "$nop_pid" 2> /dev/null
+wait "$nop_pid" 2> /dev/null
 
 echo "concurrencyScore: $concurrencyScore/${MAX_CONCURRENCY}"
 
@@ -349,9 +349,9 @@ echo "*** Cache ***"
 tiny_port=$(free_port)
 echo "Starting tiny on port ${tiny_port}"
 cd ./tiny
-./tiny ${tiny_port} &> /dev/null &
+./tiny "${tiny_port}" &> /dev/null &
 tiny_pid=$!
-cd ${HOME_DIR}
+cd "${HOME_DIR}"
 
 # Wait for tiny to start in earnest
 wait_for_port_use "${tiny_port}"
@@ -359,7 +359,7 @@ wait_for_port_use "${tiny_port}"
 # Run the proxy
 proxy_port=$(free_port)
 echo "Starting proxy on port ${proxy_port}"
-./proxy ${proxy_port} &> /dev/null &
+./proxy "${proxy_port}" &> /dev/null &
 proxy_pid=$!
 
 # Wait for the proxy to start in earnest
@@ -370,13 +370,13 @@ clear_dirs
 for file in ${CACHE_LIST}
 do
     echo "Fetching ./tiny/${file} into ${PROXY_DIR} using the proxy"
-    download_proxy $PROXY_DIR ${file} "http://localhost:${tiny_port}/${file}" "http://localhost:${proxy_port}"
+    download_proxy $PROXY_DIR "${file}" "http://localhost:${tiny_port}/${file}" "http://localhost:${proxy_port}"
 done
 
 # Kill Tiny
 echo "Killing tiny"
-kill $tiny_pid 2> /dev/null
-wait $tiny_pid 2> /dev/null
+kill "$tiny_pid" 2> /dev/null
+wait "$tiny_pid" 2> /dev/null
 
 # Now try to fetch a cached copy of one of the fetched files.
 echo "Fetching a cached copy of ./tiny/${FETCH_FILE} into ${NOPROXY_DIR}"
@@ -390,13 +390,13 @@ if [ $? -eq 0 ]; then
     echo "Success: Was able to fetch tiny/${FETCH_FILE} from the cache."
 else
     cacheScore=0
-    echo "Failure: Was not able to fetch tiny/${FETCH_FILE} from the proxy cache."
+    echo ": Was not able to fetch tiny/${FETCH_FILE} from the proxy cache."
 fi
 
 # Kill the proxy
 echo "Killing proxy"
-kill $proxy_pid 2> /dev/null
-wait $proxy_pid 2> /dev/null
+kill "$proxy_pid" 2> /dev/null
+wait "$proxy_pid" 2> /dev/null
 
 echo "cacheScore: $cacheScore/${MAX_CACHE}"
 
