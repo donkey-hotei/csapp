@@ -5,7 +5,7 @@
 #     behaves like a concurrent caching proxy.
 #
 #     David O'Hallaron, Carnegie Mellon University
-#     updated: 2/8/2016
+#     updated: 5/6/2018
 #
 #     usage: ./driver.sh
 #
@@ -16,7 +16,7 @@ MAX_CONCURRENCY=15
 MAX_CACHE=15
 
 # Various constants
-HOME_DIR=`pwd`
+HOME_DIR=$(pwd)
 PROXY_DIR="./.proxy"
 NOPROXY_DIR="./.noproxy"
 TIMEOUT=5
@@ -39,6 +39,8 @@ CACHE_LIST="tiny.c
 
 # The file we will fetch for various tests
 FETCH_FILE="home.html"
+
+#
 
 #####
 # Helper functions
@@ -80,22 +82,23 @@ function clear_dirs {
 #
 function wait_for_port_use() {
     timeout_count="0"
-    portsinuse=`netstat --numeric-ports --numeric-hosts -a --protocol=tcpip \
+    portsinuse=$(netstat --numeric-ports --numeric-hosts -a --protocol=tcpip \
         | grep tcp | cut -c21- | cut -d':' -f2 | cut -d' ' -f1 \
-        | grep -E "[0-9]+" | uniq | tr "\n" " "`
+        | grep -E "[0-9]+" | uniq | tr "\n" " ")
 
     echo "${portsinuse}" | grep -wq "${1}"
     while [ "$?" != "0" ]
     do
-        timeout_count=`expr ${timeout_count} + 1`
+        echo "Waiting ..."
+        timeout_count=$(( timeout_count + 1 ))
         if [ "${timeout_count}" == "${MAX_PORT_TRIES}" ]; then
             kill -ALRM $$
         fi
 
         sleep 1
-        portsinuse=`netstat --numeric-ports --numeric-hosts -a --protocol=tcpip \
+        portsinuse=$(netstat --numeric-ports --numeric-hosts -a --protocol=tcpip \
             | grep tcp | cut -c21- | cut -d':' -f2 | cut -d' ' -f1 \
-            | grep -E "[0-9]+" | uniq | tr "\n" " "`
+            | grep -E "[0-9]+" | uniq | tr "\n" " ")
         echo "${portsinuse}" | grep -wq "${1}"
     done
 }
@@ -108,13 +111,13 @@ function free_port {
     # Generate a random port in the range [PORT_START,
     # PORT_START+MAX_RAND]. This is needed to avoid collisions when many
     # students are running the driver on the same machine.
-    port=$((( RANDOM % ${MAX_RAND}) + ${PORT_START}))
+    port=$(((RANDOM % MAX_RAND) + PORT_START))
 
-    while [ TRUE ]
+    while true
     do
-        portsinuse=`netstat --numeric-ports --numeric-hosts -a --protocol=tcpip \
+        portsinuse=$(netstat --numeric-ports --numeric-hosts -a --protocol=tcpip \
             | grep tcp | cut -c21- | cut -d':' -f2 | cut -d' ' -f1 \
-            | grep -E "[0-9]+" | uniq | tr "\n" " "`
+            | grep -E "[0-9]+" | uniq | tr "\n" " ")
 
         echo "${portsinuse}" | grep -wq "${port}"
         if [ "$?" == "0" ]; then
@@ -123,7 +126,7 @@ function free_port {
                 echo "-1"
                 return
             fi
-            port=`expr ${port} + 1`
+            port=$(( port + 1 ))
         else
             echo "${port}"
             return
@@ -234,7 +237,7 @@ numRun=0
 numSucceeded=0
 for file in ${BASIC_LIST}
 do
-    numRun=`expr $numRun + 1`
+    numRun=$((numRun + 1))
     echo "${numRun}: ${file}"
     clear_dirs
 
@@ -250,7 +253,7 @@ do
     echo "   Comparing the two files"
     diff -q "${PROXY_DIR}/${file}" "${NOPROXY_DIR}/${file}" &> /dev/null
     if [ $? -eq 0 ]; then
-        numSucceeded=`expr ${numSucceeded} + 1`
+        numSucceeded=$((numSucceeded + 1))
         echo "   Success: Files are identical."
     else
         echo "   Failure: Files differ."
@@ -263,7 +266,7 @@ wait "$tiny_pid" 2> /dev/null
 kill "$proxy_pid" 2> /dev/null
 wait "$proxy_pid" 2> /dev/null
 
-basicScore=`expr ${MAX_BASIC} \* ${numSucceeded} / ${numRun}`
+basicScore=$((MAX_BASIC * numSucceeded / numRun))
 
 echo "basicScore: $basicScore/${MAX_BASIC}"
 
@@ -401,8 +404,8 @@ wait "$proxy_pid" 2> /dev/null
 echo "cacheScore: $cacheScore/${MAX_CACHE}"
 
 # Emit the total score
-totalScore=`expr ${basicScore} + ${cacheScore} + ${concurrencyScore}`
-maxScore=`expr ${MAX_BASIC} + ${MAX_CACHE} + ${MAX_CONCURRENCY}`
+totalScore=$((basicScore + cacheScore + concurrencyScore))
+maxScore=$((MAX_BASIC + MAX_CACHE + MAX_CONCURRENCY))
 echo ""
 echo "totalScore: ${totalScore}/${maxScore}"
 exit
