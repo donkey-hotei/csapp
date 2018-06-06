@@ -135,9 +135,31 @@ function free_port {
 }
 
 
+#
+# clean_up_tiny_and_proxy - kills tiny and proxy processes
+#
+function clean_up_tiny_and_proxy {
+    killable_pids=$(netstat -tulpn \
+                    | awk '{ print $7}' \
+                    | ack '^\d+\/proxy | ^\d+\/tiny' \
+                    | cut -d '/' -f1)
+
+    echo "Killing tiny and proxy"
+    for pid in $killable_pids
+    do
+        kill "$pid" 2> /dev/null
+        wait "$pid" 2> /dev/null
+    done
+}
+
 #######
 # Main
 #######
+
+#####
+# Trap CTRL-C and perform clean_up_tiny_and_proxy
+#
+trap clean_up_tiny_and_proxy INT
 
 ######
 # Verify that we have all of the expected files with the right
