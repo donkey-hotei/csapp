@@ -77,29 +77,30 @@ function clear_dirs {
 }
 
 #
+# find_ports_in_use - finds all ports currently in use
+#
+function find_ports_in_use {
+    netstat --numeric-ports --numeric-hosts -a --protocol=tcpip \
+      | grep tcp | cut -c21- | cut -d':' -f2 | cut -d' ' -f1 \
+      | grep -E "[0-9]+" | uniq | tr "\n" " "
+}
+
+#
 # wait_for_port_use - Spins until the TCP port number passed as an
 #     argument is actually being used. Times out after 5 seconds.
 #
 function wait_for_port_use() {
     timeout_count="0"
-    portsinuse=$(netstat --numeric-ports --numeric-hosts -a --protocol=tcpip \
-        | grep tcp | cut -c21- | cut -d':' -f2 | cut -d' ' -f1 \
-        | grep -E "[0-9]+" | uniq | tr "\n" " ")
+    find_ports_in_use | grep -wq "${1}"
 
-    echo "${portsinuse}" | grep -wq "${1}"
     while [ "$?" != "0" ]
     do
-        echo "Waiting ..."
         timeout_count=$(( timeout_count + 1 ))
         if [ "${timeout_count}" == "${MAX_PORT_TRIES}" ]; then
             kill -ALRM $$
         fi
 
         sleep 1
-        portsinuse=$(netstat --numeric-ports --numeric-hosts -a --protocol=tcpip \
-            | grep tcp | cut -c21- | cut -d':' -f2 | cut -d' ' -f1 \
-            | grep -E "[0-9]+" | uniq | tr "\n" " ")
-        echo "${portsinuse}" | grep -wq "${1}"
     done
 }
 
@@ -136,7 +137,8 @@ function free_port {
 
 
 #
-# clean_up_tiny_and_proxy - kills any stray proxies or tiny servers owned by this user
+# clean_up_tiny_and_proxy - kills any stray proxies or tiny servers
+#   owned by this user
 #
 function clean_stray_processes {
     killall -q proxy tiny nop-server.py 2> /dev/null
@@ -235,12 +237,11 @@ wait_for_port_use "${tiny_port}"
 # Run the proxy
 proxy_port=$(free_port)
 echo "Starting proxy on ${proxy_port}"
-./proxy "${proxy_port}" &> /dev/null &
+./proxy -client-port="${proxy_port}" -server-port="${tiny_port}" &> /dev/null &
 proxy_pid=$!
 
 # Wait for the proxy to start in earnest
 wait_for_port_use "${proxy_port}"
-
 
 # Now do the test by fetching some text and binary files directly from
 # Tiny and via the proxy, and then comparing the results.
