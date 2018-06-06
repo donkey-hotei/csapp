@@ -97,15 +97,15 @@ func ParseHttpRequest(request string) HttpRequest {
     httpRequest  := HttpRequest{}
     splitRequest := strings.Split(request, "\n")
 
-    requestLine := splitRequest[0]
+    requestLine   := splitRequest[0]
     restOfRequest := splitRequest[1:]
 
-    httpRequest.Method     = ParseHttpMethod(requestLine)
-    httpRequest.Path       = ParseHttpPath(requestLine)
     protocol, major, minor := ParseHttpVersion(requestLine)
     httpRequest.Proto      = protocol
     httpRequest.ProtoMajor = major
     httpRequest.ProtoMinor = minor
+    httpRequest.Method     = ParseHttpMethod(requestLine)
+    httpRequest.Path       = ParseHttpPath(requestLine)
     httpRequest.Host       = ParseHttpHostField(restOfRequest)
     httpRequest.Header     = ParseHttpHeaderFields(restOfRequest)
 
