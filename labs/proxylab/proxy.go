@@ -1,16 +1,17 @@
 package main
 
 import (
-    "flag"
-    "fmt"
     "./http"
+    "flag"
     "io"
+    "log"
+    "fmt"
     "net"
     "os"
 )
 
-const max_cache_size int = 1049000  // 1 MiB
-const max_object_size int = 102400  // 100 KiB
+const max_cache_size int = 1049000 // 1 MiB
+const max_object_size int = 102400 // 100 KiB
 
 /*
  * Generic error handler which logs the error and exits the program if error exists.
@@ -62,42 +63,50 @@ func Proxy(srcConn, dstConn *net.TCPConn) {
      * via CloseRead. This basically breaks the read loop
      * in the broker and allows us to fully close the
      * connection cleanly without a "use of closed network"
-     # error.
+     * error.
      */
-     var waitFor chan struct{}
-     select {
-     case <-srcClosed:
-         dstConn.SetLinger(0)  // to recycle port faster, discard any data
-         dstConn.CloseRead()
-         waitFor = dstClosed
-     case <-dstClosed:
-         srcConn.CloseRead()
-         waitFor = srcClosed
-     }
-     <-waitFor
+    var waitFor chan struct{}
+    select {
+    case <-srcClosed:
+        dstConn.SetLinger(0) // to recycle port faster, discard any data
+        dstConn.CloseRead()
+        waitFor = dstClosed
+    case <-dstClosed:
+        srcConn.CloseRead()
+        waitFor = srcClosed
+    }
+    <-waitFor
 }
 
 func broker(dst, src net.Conn, chanClosed chan struct{}) {
     _, err := io.Copy(dst, src)
 
     if err != nil {
-        fmt.Printf("Copy error: %s", err)
+        log.Printf("Copy error: %s", err)
     }
 
     err = src.Close()
 
     if err != nil {
-        fmt.Printf("Close error: %s", err)
+        log.Printf("Close error: %s", err)
     }
 
     chanClosed <- struct{}{}
 }
 
 func main() {
-    fmt.Printf("[+] Starting TCP proxy\n")
+    log.Println("[+] Starting TCP proxy\n")
 
-    var srcPort = flag.Int("client-side port", 1234, "listening port number for client")
-    var dstPort = flag.Int("server-side port", 4321, "listening port number for server")
+    var srcPort = flag.Int(
+        "client-port",
+        1234,
+        "listening port number for client",
+    )
+    var dstPort = flag.Int(
+        "server-port",
+        4321,
+        "listening port number for server",
+    )
 
     flag.Parse()
 
@@ -115,6 +124,8 @@ func main() {
 
     for {
         clientConn, err := clientListener.AcceptTCP()
+
+        defer clientConn.Close()
 
         /*
          * Wait until we receive a connection from the client and,
