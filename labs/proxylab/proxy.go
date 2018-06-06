@@ -110,8 +110,8 @@ func main() {
 
     flag.Parse()
 
-    clientPort := fmt.Sprintf(":%d", *srcPort)
-    serverPort := fmt.Sprintf(":%d", *dstPort)
+    clientPort := fmt.Sprintf("0.0.0.0:%d", *srcPort)
+    serverPort := fmt.Sprintf("0.0.0.0:%d", *dstPort)
 
     /* client */
     laddr, err := net.ResolveTCPAddr("tcp4", clientPort)
