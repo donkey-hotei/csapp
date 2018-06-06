@@ -1,9 +1,10 @@
 package main
 
 import (
-    "./http"
-    "fmt"
     "flag"
+    "fmt"
+    "./http"
+    "io"
     "net"
     "os"
 )
@@ -45,6 +46,53 @@ func handleClient(conn net.Conn) {
     }
 }
 
+func Proxy(srcConn, dstConn *net.TCPConn) {
+    // Channels to wait for close events on source
+    // and destination connections.
+    srcClosed := make(chan struct{}, 1)
+    dstClosed := make(chan struct{}, 1)
+
+    // Broker data between both connections.
+    go broker(srcConn, dstConn, dstClosed)
+    go broker(dstConn, srcConn, srcClosed)
+
+    /*
+     * Wait for one half of the proxy to exit first
+     * before triggering shutdown of the other connection
+     * via CloseRead. This basically breaks the read loop
+     * in the broker and allows us to fully close the
+     * connection cleanly without a "use of closed network"
+     # error.
+     */
+     var waitFor chan struct{}
+     select {
+     case <-srcClosed:
+         dstConn.SetLinger(0)  // to recycle port faster, discard any data
+         dstConn.CloseRead()
+         waitFor = dstClosed
+     case <-dstClosed:
+         srcConn.CloseRead()
+         waitFor = srcClosed
+     }
+     <-waitFor
+}
+
+func broker(dst, src net.Conn, chanClosed chan struct{}) {
+    _, err := io.Copy(dst, src)
+
+    if err != nil {
+        fmt.Printf("Copy error: %s", err)
+    }
+
+    err = src.Close()
+
+    if err != nil {
+        fmt.Printf("Close error: %s", err)
+    }
+
+    chanClosed <- struct{}{}
+}
+
 func main() {
     fmt.Printf("[+] Starting TCP proxy\n")
 
@@ -53,8 +101,10 @@ func main() {
 
     flag.Parse()
 
-    /* client */
     clientPort := fmt.Sprintf(":%d", *srcPort)
+    serverPort := fmt.Sprintf(":%d", *dstPort)
+
+    /* client */
     laddr, err := net.ResolveTCPAddr("tcp4", clientPort)
     checkError(err)
 
@@ -63,20 +113,27 @@ func main() {
 
     defer clientListener.Close()
 
-    /* server */
-    serverPort := fmt.Sprintf(":%d", *dstPort)
-    serverConnection, err := net.Dial("tcp", serverPort)
-    checkError(err)
-
-    defer serverConnection.Close()
-
     for {
-        clientConn, err := clientListener.Accept()
+        clientConn, err := clientListener.AcceptTCP()
 
+        /*
+         * Wait until we receive a connection from the client and,
+         * when we do, open a connection to the requested server to
+         * proxy communcation between the two.
+         */
         if err != nil {
             continue
         }
 
-        handleClient(clientConn)
+        /* server */
+        raddr, err := net.ResolveTCPAddr("tcp4", serverPort)
+        checkError(err)
+
+        serverConn, err := net.DialTCP("tcp", nil, raddr)
+        checkError(err)
+
+        defer serverConn.Close()
+
+        Proxy(clientConn, serverConn)
     }
 }
