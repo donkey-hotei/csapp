@@ -136,20 +136,10 @@ function free_port {
 
 
 #
-# clean_up_tiny_and_proxy - kills tiny and proxy processes
+# clean_up_tiny_and_proxy - kills any stray proxies or tiny servers owned by this user
 #
-function clean_up_tiny_and_proxy {
-    killable_pids=$(netstat -tulpn \
-                    | awk '{ print $7}' \
-                    | ack '^\d+\/proxy | ^\d+\/tiny' \
-                    | cut -d '/' -f1)
-
-    echo "Killing tiny and proxy"
-    for pid in $killable_pids
-    do
-        kill "$pid" 2> /dev/null
-        wait "$pid" 2> /dev/null
-    done
+function clean_stray_processes {
+    killall -q proxy tiny nop-server.py 2> /dev/null
 }
 
 #######
@@ -159,15 +149,14 @@ function clean_up_tiny_and_proxy {
 #####
 # Trap CTRL-C and perform clean_up_tiny_and_proxy
 #
-trap clean_up_tiny_and_proxy INT
+trap clean_up_stray_processes INT
 
 ######
 # Verify that we have all of the expected files with the right
 # permissions
 #
 
-# Kill any stray proxies or tiny servers owned by this user
-killall -q proxy tiny nop-server.py 2> /dev/null
+clean_stray_processes
 
 # Make sure we have a Tiny directory
 if [ ! -d ./tiny ]
